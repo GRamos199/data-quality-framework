@@ -20,11 +20,10 @@ FROM base as development
 
 RUN pip install --upgrade pip setuptools wheel
 
-COPY requirements.txt .
+COPY . .
+
 RUN pip install -r requirements.txt
 RUN pip install -e ".[dev]"
-
-COPY . .
 
 EXPOSE 8000
 
@@ -35,7 +34,8 @@ FROM base as production
 
 RUN pip install --upgrade pip setuptools wheel gunicorn
 
-COPY requirements.txt .
+COPY . .
+
 RUN pip install -r requirements.txt
 RUN pip install -e .
 

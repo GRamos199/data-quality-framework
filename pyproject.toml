@@ -78,3 +78,12 @@ python_functions = "test_*"
 [tool.coverage.run]
 source = ["src/data_quality_framework"]
 omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+fail_under = 50
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
