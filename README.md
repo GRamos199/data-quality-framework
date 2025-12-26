@@ -29,25 +29,58 @@ Complete data quality solution featuring:
 
 ```mermaid
 graph TB
+    subgraph "Data Sources"
+        A["Files<br/>JSON/CSV"]
+        B["APIs<br/>REST"]
+        C["Databases<br/>SQL"]
+    end
+    
     subgraph "Data Pipeline"
-        A["Data Source<br/>API/File/DB"]
-        B["Raw Layer<br/>Bronze"]
-        C["Quality Checks"]
-        D["Clean Layer<br/>Silver"]
-        E["Analytics<br/>Gold"]
+        D["Raw Layer<br/>Bronze"]
+        E["Quality Checks<br/>Validation"]
+        F["Clean Layer<br/>Silver"]
     end
     
     subgraph "Validation Framework"
-        F["Framework<br/>Core"]
-        G["REST API<br/>FastAPI"]
-        H["CLI Tool<br/>Click"]
-        I["Database<br/>PostgreSQL"]
+        G["Framework Core<br/>Orchestrator"]
+        H["Validators<br/>Schema/Null/Range<br/>Freshness/Unique"]
+        I["Config Loader<br/>YAML Rules"]
     end
     
-    subgraph "Infrastructure"
-        J["Monitoring<br/>Prometheus"]
-        K["Dashboard<br/>Grafana"]
----
+    subgraph "API & CLI"
+        J["REST API<br/>FastAPI"]
+        K["CLI Tool<br/>Click"]
+    end
+    
+    subgraph "Data Persistence"
+        L["PostgreSQL<br/>Results DB"]
+    end
+    
+    subgraph "Monitoring"
+        M["Prometheus<br/>Metrics"]
+        N["Grafana<br/>Dashboards"]
+    end
+    
+    A --> D
+    B --> D
+    C --> D
+    
+    D --> E
+    E --> G
+    I --> G
+    H --> G
+    G --> F
+    
+    J --> G
+    K --> G
+    
+    G --> L
+    G --> M
+    M --> N
+    
+    J -.-> M
+    K -.-> M
+```
 
 ## 📡 API Endpoints
 
@@ -343,7 +376,7 @@ MIT License - See LICENSE file for details
 
 ## 👤 Author
 
-Data Engineering Team
+George Ramos
 
 ## 🔗 Related Projects
 
@@ -360,4 +393,4 @@ For issues, questions, or contributions:
 
 ---
 
-**Built with ❤️ for data quality and reliability**
+**Built with for data quality and reliability**

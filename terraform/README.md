@@ -16,34 +16,36 @@ This Terraform configuration deploys:
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Internet                          │
-└─────────────────────────────────────────────────────┘
-                        │
-                        ▼
-        ┌───────────────────────────────┐
-        │   Application Load Balancer   │
-        │    (alb.tf)                   │
-        └───────────────────────────────┘
-                   │           │
-        ┌──────────┘           └──────────┐
-        ▼                                  ▼
-  ┌──────────────┐              ┌──────────────┐
-  │  EC2 Instance│              │  EC2 Instance│
-  │  (API Server)│              │  (API Server)│
-  │  Auto Scale  │              │  Auto Scale  │
-  └──────────────┘              └──────────────┘
-        │                                  │
-        └──────────────┬───────────────────┘
-                       ▼
-        ┌──────────────────────────────┐
-        │   RDS PostgreSQL Database    │
-        │   (rds.tf)                   │
-        └──────────────────────────────┘
-
-  All in VPC (vpc.tf) with IAM roles (iam.tf)
-  Monitored by CloudWatch (monitoring.tf)
+```mermaid
+graph TB
+    Internet["AWS"]
+    
+    Internet --> ALB["Application Load Balancer<br/>alb.tf"]
+    
+    ALB --> EC2_1["EC2 Instance<br/>API Server<br/>Auto Scale"]
+    ALB --> EC2_2["EC2 Instance<br/>API Server<br/>Auto Scale"]
+    
+    EC2_1 --> RDS["RDS PostgreSQL Database<br/>rds.tf"]
+    EC2_2 --> RDS
+    
+    VPC["VPC vpc.tf<br/>Public & Private Subnets"]
+    IAM["IAM Roles<br/>iam.tf"]
+    CW["CloudWatch<br/>monitoring.tf"]
+    
+    ALB -.-> VPC
+    EC2_1 -.-> VPC
+    EC2_2 -.-> VPC
+    RDS -.-> VPC
+    
+    EC2_1 -.-> IAM
+    EC2_2 -.-> IAM
+    RDS -.-> IAM
+    
+    ALB -.-> CW
+    EC2_1 -.-> CW
+    EC2_2 -.-> CW
+    RDS -.-> CW
+    
 ```
 
 ## Project Structure
