@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "city": "Buenos Aires",
+    "temperature": 28.5,
+    "humidity": 65,
+    "pressure": 1013,
+    "weather": "Clear",
+    "wind_speed": 5.2,
+    "timestamp": "2025-12-26T13:00:00Z"
+  },
+  {
+    "id": 2,
+    "city": "Madrid",
+    "temperature": 15.2,
+    "humidity": 45,
+    "pressure": 1020,
+    "weather": "Cloudy",
+    "wind_speed": 8.1,
+    "timestamp": "2025-12-26T13:05:00Z"
+  },
+  {
+    "id": 3,
+    "city": "Sydney",
+    "temperature": 22.1,
+    "humidity": 55,
+    "pressure": 1015,
+    "weather": "Partly Cloudy",
+    "wind_speed": 3.5,
+    "timestamp": "2025-12-26T13:10:00Z"
+  }
+]
