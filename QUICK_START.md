@@ -1,19 +1,19 @@
 # Quick Start Guide - Data Quality Framework
 
-## 🚀 Ejecutar Todo Rápidamente
+## 🚀 Run Everything Quickly
 
-### Paso 1: Activar el ambiente virtual
+### Step 1: Activate the virtual environment
 ```bash
 cd /home/george/data-quality-framework
 source venv/bin/activate
 ```
 
-### Paso 2: Ejecutar las pruebas (21 tests)
+### Step 2: Run the tests (21 tests)
 ```bash
 pytest tests/ -v
 ```
 
-**Salida esperada:**
+**Expected output:**
 ```
 test_validators.py::TestNullCheckValidator::test_valid_no_nulls PASSED
 test_validators.py::TestNullCheckValidator::test_invalid_with_nulls PASSED
@@ -21,12 +21,12 @@ test_validators.py::TestNullCheckValidator::test_invalid_with_nulls PASSED
 ===================== 21 passed in 0.43s =====================
 ```
 
-### Paso 3: Ejecutar ejemplos del framework
+### Step 3: Run framework examples
 ```bash
 python examples/openweather_examples.py
 ```
 
-**Salida esperada:**
+**Expected output:**
 ```
 ======================================================================
 EXAMPLE 1: Valid Raw OpenWeather Data
@@ -38,12 +38,12 @@ EXAMPLE 6: Clean Data with Duplicate Records
 ✗ Quality checks failed for openweather (raw): ['Unique City-Date']
 ```
 
-### Paso 4: Ejecutar la integración completa ETL
+### Step 4: Run the complete ETL integration
 ```bash
 python examples/lakehouse_integration_example.py
 ```
 
-**Salida esperada:**
+**Expected output:**
 ```
 [EXTRACT] Fetching data from OpenWeather API...
 ✓ Extracted 3 records from API
@@ -65,9 +65,9 @@ python examples/lakehouse_integration_example.py
 
 ---
 
-## 📊 Cómo Usar tu Archivo JSON del Proyecto Anterior
+## 📊 How to Use Your JSON File from the Previous Project
 
-### Paso 1: Crear script para leer tu JSON
+### Step 1: Create script to read your JSON
 
 ```python
 # test_your_data.py
@@ -80,70 +80,70 @@ from data_quality_framework import (
 )
 from data_quality_framework.orchestrator import QualityCheckOrchestrator
 
-# Leer tu JSON
-with open('tu_archivo.json', 'r') as f:
+# Read your JSON
+with open('your_file.json', 'r') as f:
     data_dict = json.load(f)
 
-# Convertir a DataFrame (ajusta según tu estructura)
+# Convert to DataFrame (adjust based on your structure)
 df = pd.DataFrame(data_dict)
 
-# Crear validadores personalizados para tu datos
+# Create custom validators for your data
 validators = [
-    NullCheckValidator("campos_obligatorios", ["campo1", "campo2"]),
-    RangeValidator("rangos_validos", {
-        "temperatura": {"min": -60, "max": 65},
-        "humedad": {"min": 0, "max": 100},
+    NullCheckValidator("mandatory_fields", ["field1", "field2"]),
+    RangeValidator("valid_ranges", {
+        "temperature": {"min": -60, "max": 65},
+        "humidity": {"min": 0, "max": 100},
     }),
 ]
 
-# Ejecutar validación
+# Run validation
 orchestrator = QualityCheckOrchestrator()
 result = orchestrator.run_checks(
     df,
     validators,
-    dataset_name="mi_dataset",
+    dataset_name="my_dataset",
     layer="raw",
     stop_on_failure=False,
 )
 
-# Ver resultados
+# View results
 if result.passed:
-    print("✓ Datos válidos!")
+    print("✓ Data is valid!")
 else:
-    print("✗ Datos inválidos:")
+    print("✗ Data is invalid:")
     for validator, errors in result.errors.items():
         print(f"  {validator}: {errors}")
 ```
 
-### Paso 2: Dónde poner tu archivo JSON
+### Step 2: Where to put your JSON file
 
-**Opción A: En la raíz**
+**Option A: In the root**
 ```bash
 /home/george/data-quality-framework/
-├── tu_archivo.json    ← Aquí
+├── your_file.json    ← Here
 ├── test_your_data.py
 └── ...
 ```
 
-**Opción B: En carpeta `data/`** (recomendado)
+**Option B: In `data/` folder** (recommended)
 ```bash
 /home/george/data-quality-framework/
 ├── data/
-│   └── tu_archivo.json    ← Aquí
+│   └── your_file.json    ← Here
 ├── test_your_data.py
 └── ...
 ```
 
-### Paso 3: Ejecutar tu test
+### Step 3: Run your test
 ```bash
 python test_your_data.py
 ```
 
 ---
 
-## 🎯 Estructura del JSON Esperada
+## 🎯 Expected JSON Structure
 
-### Si tu JSON tiene datos meteorológicos:
+### If your JSON has weather data:
 ```json
 {
   "id": 1,
@@ -155,7 +155,7 @@ python test_your_data.py
 }
 ```
 
-### Si es un array:
+### If it's an array:
 ```json
 [
   {
@@ -173,23 +173,23 @@ python test_your_data.py
 
 ---
 
-## 📁 Configuración con YAML
+## 📁 Configuration with YAML
 
-También puedes crear una configuración YAML para validar automáticamente:
+You can also create a YAML configuration for automatic validation:
 
 ```yaml
-# config/mi_dataset_validation.yaml
-dataset: "mi_dataset"
+# config/my_dataset_validation.yaml
+dataset: "my_dataset"
 layer: "raw"
 
 rules:
   - type: "null_check"
-    name: "campos_obligatorios"
+    name: "mandatory_fields"
     columns: ["city", "temperature"]
     enabled: true
 
   - type: "range"
-    name: "temperaturas_validas"
+    name: "valid_temperatures"
     columns:
       temperature:
         min: -60
@@ -202,75 +202,75 @@ rules:
 on_failure: "log_and_stop"
 ```
 
-Luego usarla:
+Then use it:
 ```python
 from data_quality_framework import ConfigLoader
 
-config = ConfigLoader.load_yaml("config/mi_dataset_validation.yaml")
+config = ConfigLoader.load_yaml("config/my_dataset_validation.yaml")
 print(config)
 ```
 
 ---
 
-## 🧪 Tipos de Validadores Disponibles
+## 🧪 Available Validator Types
 
-| Validador | Uso | Ejemplo |
-|-----------|-----|---------|
-| **NullCheckValidator** | Verificar campos obligatorios | `NullCheckValidator("nulls", ["city", "temperature"])` |
-| **RangeValidator** | Valores dentro de rangos | `RangeValidator("ranges", {"temp": {"min": -60, "max": 65}})` |
-| **UniquenessValidator** | Claves únicas | `UniquenessValidator("unique", ["city", "date"])` |
-| **SchemaValidator** | Tipos de datos | `SchemaValidator("schema", {"id": "int64", "city": "string"})` |
-| **FreshnessValidator** | Datos recientes | `FreshnessValidator("fresh", "timestamp", max_age_hours=1)` |
-| **CustomValidator** | Lógica personalizada | `CustomValidator("custom", lambda df: custom_logic(df))` |
+| Validator | Purpose | Example |
+|-----------|---------|---------|
+| **NullCheckValidator** | Check mandatory fields | `NullCheckValidator("nulls", ["city", "temperature"])` |
+| **RangeValidator** | Values within ranges | `RangeValidator("ranges", {"temp": {"min": -60, "max": 65}})` |
+| **UniquenessValidator** | Unique keys | `UniquenessValidator("unique", ["city", "date"])` |
+| **SchemaValidator** | Data types | `SchemaValidator("schema", {"id": "int64", "city": "string"})` |
+| **FreshnessValidator** | Recent data | `FreshnessValidator("fresh", "timestamp", max_age_hours=1)` |
+| **CustomValidator** | Custom logic | `CustomValidator("custom", lambda df: custom_logic(df))` |
 
 ---
 
-## 🔍 Debuguear Errores
+## 🔍 Debug Errors
 
-Si hay errores, mira el resultado detallado:
+If there are errors, check the detailed result:
 
 ```python
 result = orchestrator.run_checks(df, validators, ...)
 
-# Ver detalles
-print(f"Pasó: {result.passed}")
-print(f"Validadores ejecutados: {result.validators_run}")
-print(f"Validadores fallidos: {result.failed_validators}")
-print(f"Errores: {result.errors}")
+# View details
+print(f"Passed: {result.passed}")
+print(f"Validators run: {result.validators_run}")
+print(f"Failed validators: {result.failed_validators}")
+print(f"Errors: {result.errors}")
 
-# Ver reporte completo
+# View full report
 report = orchestrator.generate_report()
 print(report)
 ```
 
 ---
 
-## 📚 Archivos Importantes
+## 📚 Important Files
 
-| Archivo | Propósito |
-|---------|-----------|
-| [README.md](README.md) | Documentación completa |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arquitectura del sistema |
-| [docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md) | Cómo integrar con Airflow |
-| [examples/openweather_examples.py](examples/openweather_examples.py) | Ejemplos de validadores |
-| [examples/lakehouse_integration_example.py](examples/lakehouse_integration_example.py) | ETL completo |
-| [src/data_quality_framework/validators.py](src/data_quality_framework/validators.py) | Código de validadores |
-
----
-
-## ✅ Checklist de Ejecución
-
-- [ ] `source venv/bin/activate` - Ambiente activado
-- [ ] `pytest tests/ -v` - 21 tests pasando
-- [ ] `python examples/openweather_examples.py` - Ejemplos funcionando
-- [ ] `python examples/lakehouse_integration_example.py` - ETL completo
-- [ ] Tu archivo JSON copiado a `/data/` o raíz
-- [ ] Tu script `test_your_data.py` creado
-- [ ] Tu script ejecutando exitosamente
+| File | Purpose |
+|------|---------|
+| [README.md](README.md) | Complete documentation |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
+| [docs/INTEGRATION_GUIDE.md](docs/INTEGRATION_GUIDE.md) | How to integrate with Airflow |
+| [examples/openweather_examples.py](examples/openweather_examples.py) | Validator examples |
+| [examples/lakehouse_integration_example.py](examples/lakehouse_integration_example.py) | Complete ETL |
+| [src/data_quality_framework/validators.py](src/data_quality_framework/validators.py) | Validator code |
 
 ---
 
-## 🆘 Problemas Comunes
+## ✅ Execution Checklist
+
+- [ ] `source venv/bin/activate` - Environment activated
+- [ ] `pytest tests/ -v` - 21 tests passing
+- [ ] `python examples/openweather_examples.py` - Examples working
+- [ ] `python examples/lakehouse_integration_example.py` - Complete ETL
+- [ ] Your JSON file copied to `/data/` or root
+- [ ] Your script `test_your_data.py` created
+- [ ] Your script running successfully
+
+---
+
+## 🆘 Common Issues
 
 ### "ModuleNotFoundError: No module named 'data_quality_framework'"
 ```bash
@@ -278,9 +278,9 @@ pip install -e .
 ```
 
 ### "Validator failed: Column not found"
-Asegúrate que el nombre de columna existe (case-sensitive):
+Make sure the column name exists (case-sensitive):
 ```python
-# Verificar columnas disponibles
+# Check available columns
 print(df.columns.tolist())
 ```
 
@@ -291,4 +291,4 @@ pytest tests/ -v --tb=short
 
 ---
 
-¡Listo! Ahora estás listos para ejecutar todo. 🚀
+Ready to go! Now you're all set to run everything. 🚀
