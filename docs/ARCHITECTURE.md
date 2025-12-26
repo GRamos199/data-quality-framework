@@ -4,38 +4,21 @@
 
 The Data Quality Framework follows a layered, modular architecture designed for reusability and flexibility.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Data Sources (APIs, Files)                │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                      Raw Layer                              │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  Quality Validation (Freshness, Schema, Nulls)      │  │
-│  │  ✗ Failures → Quarantine/Stop Pipeline               │  │
-│  │  ✓ Passes → Load to Raw                              │  │
-│  └──────────────────────────────────────────────────────┘  │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                  Transform & Clean                          │
-│  (Data transformation, deduplication, standardization)      │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                    Clean Layer                              │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  Quality Validation (Uniqueness, Ranges, Freshness) │  │
-│  │  ✗ Failures → Alert/Stop Pipeline                   │  │
-│  │  ✓ Passes → Load to Clean                            │  │
-│  └──────────────────────────────────────────────────────┘  │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────────┐
-│                 Analytics Layer                             │
-│     (Reports, Dashboards, Machine Learning Models)         │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["Data Sources<br/>(APIs, Files)"] --> B["Raw Layer"]
+    B --> B1["Quality Validation<br/>(Freshness, Schema, Nulls)"]
+    B1 -->|❌ Failures| B2["Quarantine/Stop"]
+    B1 -->|✅ Passes| B3["Load to Raw"]
+    
+    B3 --> C["Transform & Clean"]
+    C --> D["Clean Layer"]
+    D --> D1["Quality Validation<br/>(Uniqueness, Ranges, Freshness)"]
+    D1 -->|❌ Failures| D2["Alert/Stop"]
+    D1 -->|✅ Passes| D3["Load to Clean"]
+    
+    D3 --> E["Analytics Layer<br/>(Reports, Dashboards, ML Models)"]
+    
 ```
 
 ## Component Overview
@@ -137,42 +120,43 @@ API Request → JSON Response
 ```
 
 ### Step 2: Load to Raw Layer
-```
-Raw DataFrame
-    ↓
-[Freshness Check]      ← Is data < 1 hour old?
-[Null Check]           ← Required fields present?
-[Schema Validation]    ← Column types correct?
-[Range Check]          ← Temperature, humidity in valid ranges?
-    ↓
-✓ PASS → Loaded to Raw Layer
-✗ FAIL → Quarantine + Alert
+```mermaid
+graph TD
+    A["Raw DataFrame"] --> B["Freshness Check"]
+    B -->|Is data < 1h old?| C["Null Check"]
+    C -->|Required fields present?| D["Schema Validation"]
+    D -->|Column types correct?| E["Range Check"]
+    E -->|Temperature, humidity in range?| F{"All Passed?"}
+    F -->|✅ Yes| G["Loaded to Raw Layer"]
+    F -->|❌ No| H["Quarantine + Alert"]
+    
 ```
 
 ### Step 3: Transform
-```
-Raw Data
-    ↓
-Clean/enrich:
-  - Standardize column names
-  - Convert units (Kelvin → Celsius)
-  - Add derived fields (feels_like_celsius)
-  - Denormalize related data
-    ↓
-Clean DataFrame
+```mermaid
+graph TD
+    A["Raw Data"] --> B["Clean/Enrich"]
+    B --> B1["Standardize column names"]
+    B1 --> B2["Convert units<br/>(Kelvin → Celsius)"]
+    B2 --> B3["Add derived fields<br/>(feels_like_celsius)"]
+    B3 --> B4["Denormalize related data"]
+    B4 --> C["Clean DataFrame"]
+    
 ```
 
 ### Step 4: Load to Clean Layer
-```
-Clean DataFrame
-    ↓
-[Null Check]           ← No nulls in key columns?
-[Uniqueness Check]     ← One record per city per timestamp?
-[Range Check]          ← Values within expected bounds?
-[Freshness Check]      ← Data recent enough?
-    ↓
-✓ PASS → Loaded to Clean Layer → Available for Analytics
-✗ FAIL → Alert + Block → Prevent analytics from using bad data
+```mermaid
+graph TD
+    A["Clean DataFrame"] --> B["Null Check"]
+    B -->|No nulls in key columns?| C["Uniqueness Check"]
+    C -->|One record per city/timestamp?| D["Range Check"]
+    D -->|Values within bounds?| E["Freshness Check"]
+    E -->|Data recent enough?| F{"All Passed?"}
+    F -->|✅ Yes| G["Loaded to Clean Layer"]
+    G --> H["Available for Analytics"]
+    F -->|❌ No| I["Alert + Block"]
+    I --> J["Prevent bad data from analytics"]
+    
 ```
 
 ## Configuration Structure
@@ -261,13 +245,15 @@ on_failure: "log_and_stop"
 
 ### Raw Layer Failure
 
-```
-API → Raw Validation ✗ → STOP
-              │
-              └─ Log error
-              └─ Alert data engineering team
-              └─ Data NOT loaded
-              └─ Pipeline halts
+```mermaid
+graph TD
+    A["API"] --> B["Raw Validation"]
+    B -->|❌ Failed| C["STOP"]
+    C --> D["Log error"]
+    C --> E["Alert data engineering team"]
+    C --> F["Data NOT loaded"]
+    C --> G["Pipeline halts"]
+    
 ```
 
 **Action:** Data engineer investigates API issue
@@ -277,13 +263,15 @@ API → Raw Validation ✗ → STOP
 
 ### Clean Layer Failure
 
-```
-Transform → Clean Validation ✗ → STOP
-               │
-               └─ Log error
-               └─ Alert data team
-               └─ Data NOT published to analytics
-               └─ Dashboard shows stale data
+```mermaid
+graph TD
+    A["Transform"] --> B["Clean Validation"]
+    B -->|❌ Failed| C["STOP"]
+    C --> D["Log error"]
+    C --> E["Alert data team"]
+    C --> F["Data NOT published to analytics"]
+    C --> G["Dashboard shows stale data"]
+    
 ```
 
 **Action:** Data engineer investigates transformation

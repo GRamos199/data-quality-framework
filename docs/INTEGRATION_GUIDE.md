@@ -6,25 +6,25 @@ This guide explains how to integrate the Data Quality Framework with the [data-l
 
 The Data Quality Framework validates data at each stage of your lakehouse ETL pipeline:
 
-```
-Airflow DAG (data-lakehouse-simulation)
-    │
-    ├─ [Extract] OpenWeather API
-    │   └─ → Raw Layer
-    │       └─ ✓ Quality Checks (Framework)
-    │           ├─ Freshness validation
-    │           ├─ Schema validation
-    │           └─ Mandatory field checks
-    │
-    ├─ [Transform] Raw → Clean
-    │   └─ → Clean Layer
-    │       └─ ✓ Quality Checks (Framework)
-    │           ├─ Uniqueness validation
-    │           ├─ Range validation
-    │           └─ No null checks
-    │
-    └─ [Load] → Analytics Layer
-        (data is guaranteed to be valid)
+```mermaid
+graph TD
+    A["Airflow DAG<br/>(data-lakehouse-simulation)"] --> B["Extract<br/>OpenWeather API"]
+    B --> C["Raw Layer"]
+    C --> C1["Quality Checks<br/>(Framework)"]
+    C1 --> C2["Freshness validation"]
+    C1 --> C3["Schema validation"]
+    C1 --> C4["Mandatory field checks"]
+    
+    C4 --> D["Transform<br/>Raw → Clean"]
+    D --> E["Clean Layer"]
+    E --> E1["Quality Checks<br/>(Framework)"]
+    E1 --> E2["Uniqueness validation"]
+    E1 --> E3["Range validation"]
+    E1 --> E4["Null checks"]
+    
+    E4 --> F["Load<br/>Analytics Layer"]
+    F --> G["Data is guaranteed<br/>to be valid"]
+    
 ```
 
 ## 🔧 Installation
@@ -610,6 +610,27 @@ def safe_validation_task(ti):
         # Unexpected error
         logger.exception(f"Unexpected error in validation: {e}")
         raise
+```
+## 🔄 Airflow DAG Task Flow
+
+Visualizing the task dependencies and quality gates:
+
+```mermaid
+graph TD
+    A["Extract API"] --> B["Validate Raw Data"]
+    B -->|✅ Passed| C["Transform"]
+    B -->|❌ Failed| D["Alert & Stop"]
+    
+    C --> E["Validate Clean Data"]
+    E -->|✅ Passed| F["Load to Analytics"]
+    E -->|❌ Failed| G["Alert & Stop"]
+    
+    F --> H["Generate Report"]
+    H --> I["Success"]
+    
+    D --> J["Pipeline Halted"]
+    G --> J
+    
 ```
 
 ## 📖 Additional Resources

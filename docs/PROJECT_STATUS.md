@@ -31,7 +31,44 @@
 - [x] .gitignore configuration
 - [x] Tests directory with examples
 
+## Development Roadmap
+
+```mermaid
+graph TD
+    A["Data Quality Framework"] --> B["Core Components"]
+    A --> C["Validators"]
+    A --> D["Integration"]
+    
+    B --> B1["✅ Orchestrator"]
+    B --> B2["✅ Config Loader"]
+    B --> B3["✅ Base Classes"]
+    
+    C --> C1["✅ SchemaValidator"]
+    C --> C2["✅ NullCheckValidator"]
+    C --> C3["✅ UniquenessValidator"]
+    C --> C4["✅ RangeValidator"]
+    C --> C5["✅ FreshnessValidator"]
+    C --> C6["✅ CustomValidator"]
+    
+    D --> D1["✅ Tests 21/21"]
+    D --> D2["✅ Documentation"]
+    D --> D3["✅ Examples"]
+    
+```
+
 ## 🚀 Next Steps (Your Implementation)
+
+```mermaid
+graph TD
+    A["Start Implementation"] --> B["1. Git Setup"]
+    B --> C["2. Test Locally"]
+    C --> D["3. Integrate with Lakehouse"]
+    D --> E["4. Create Airflow DAG"]
+    E --> F["5. Extend for Your Data"]
+    F --> G["6. Setup CI/CD"]
+    G --> H["Production Ready"]
+    
+```
 
 ### 1. Git Repository Setup
 ```bash
