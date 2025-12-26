@@ -18,14 +18,16 @@ This framework provides:
 
 This framework integrates with the lakehouse-simulation project:
 
-```
-API / Data Source
-    ↓
-Raw Layer
-    ↓ ← Data Quality Checks (This Framework)
-Clean Layer
-    ↓ ← Data Quality Checks (This Framework)
-Analytics Layer
+```mermaid
+graph TD
+    A["API / Data Source"] --> B["Raw Layer"]
+    B --> C["Data Quality Checks<br/>(This Framework)"]
+    C --> D["Clean Layer"]
+    D --> E["Data Quality Checks<br/>(This Framework)"]
+    E --> F["Analytics Layer"]
+    
+    style C fill:#4CAF50,color:#fff
+    style E fill:#4CAF50,color:#fff
 ```
 
 ### Components
@@ -454,40 +456,63 @@ pytest tests/ --cov=src/data_quality_framework --cov-report=html
 
 ## 📚 Project Structure
 
-```
-data-quality-framework/
-├── src/data_quality_framework/
-│   ├── __init__.py              # Package exports
-│   ├── base.py                  # Base classes and interfaces
-│   ├── validators.py            # All validator implementations
-│   ├── orchestrator.py          # Orchestrator for running checks
-│   ├── config_loader.py         # Configuration loading
-│   └── exceptions.py            # Custom exceptions
-├── config/
-│   ├── openweather_raw_validation.yaml
-│   └── openweather_clean_validation.yaml
-├── examples/
-│   ├── openweather_examples.py          # Validator examples
-│   └── lakehouse_integration_example.py # ETL integration example
-├── tests/
-│   ├── test_validators.py
-│   └── test_orchestrator.py
-├── docs/
-│   └── ARCHITECTURE.md
-├── README.md
-├── requirements.txt
-├── setup.py
-└── pyproject.toml
+```mermaid
+graph TD
+    A["data-quality-framework"]
+    A --> B["src/data_quality_framework"]
+    A --> C["config/"]
+    A --> D["examples/"]
+    A --> E["tests/"]
+    A --> F["docs/"]
+    A --> G["README.md"]
+    
+    B --> B1["__init__.py"]
+    B --> B2["base.py"]
+    B --> B3["validators.py"]
+    B --> B4["orchestrator.py"]
+    B --> B5["config_loader.py"]
+    B --> B6["exceptions.py"]
+    
+    C --> C1["openweather_raw_validation.yaml"]
+    C --> C2["openweather_clean_validation.yaml"]
+    
+    D --> D1["openweather_examples.py"]
+    D --> D2["lakehouse_integration_example.py"]
+    
+    E --> E1["test_validators.py"]
+    E --> E2["test_orchestrator.py"]
+    
+    style B fill:#2196F3,color:#fff
+    style C fill:#FF9800,color:#fff
+    style D fill:#9C27B0,color:#fff
+    style E fill:#F44336,color:#fff
 ```
 
 ## 🔄 Workflow
 
-1. **Define Validators** - Create validator instances for your data
-2. **Configure Rules** - Use YAML to specify which validations to run
-3. **Create Orchestrator** - Initialize QualityCheckOrchestrator
-4. **Run Checks** - Execute validators on your data
-5. **Handle Results** - Check if validation passed and react accordingly
-6. **Generate Reports** - View validation history and summary
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant Validators as Validators
+    participant Orchestrator as Orchestrator
+    participant Data as Data Layer
+    
+    App->>Orchestrator: run_checks(data, validators)
+    Orchestrator->>Validators: Execute validator 1
+    Validators->>Validators: Validate data
+    Validators-->>Orchestrator: Result
+    Orchestrator->>Validators: Execute validator 2
+    Validators->>Validators: Validate data
+    Validators-->>Orchestrator: Result
+    Orchestrator->>Orchestrator: Aggregate results
+    Orchestrator-->>App: ValidationResult
+    
+    alt All Passed
+        App->>Data: Load data
+    else Any Failed
+        App->>App: Handle error
+    end
+```
 
 ## ⚙️ Configuration Best Practices
 
