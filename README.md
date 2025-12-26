@@ -584,7 +584,7 @@ Data Engineering Team
 
 ## 🔗 Related Projects
 
-- [data-lakehouse-simulation](https://github.com/yourusername/data-lakehouse-simulation) - Lakehouse ETL project using Apache Airflow
+- [data-lakehouse-simulation](https://github.com/GRamos199/data-lakehouse-simulation) - Lakehouse ETL project using Apache Airflow
 - [openweather-api](https://openweathermap.org/api) - OpenWeather API documentation
 
 ## 📞 Support
