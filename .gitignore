@@ -110,3 +110,59 @@ Thumbs.db
 .data/
 *.parquet
 *.csv
+data/
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+!terraform/environments/
+terraform/crash.log
+terraform/override.tf
+terraform/override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Docker
+.dockerignore
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+
+# Monitoring
+prometheus_data/
+grafana_data/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Environment files
+.env.local
+.env.*.local
+.env.*.yml
+
+# API/Web
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage/
+
+# Build artifacts
+build/
+dist/
+*.wheel
+*.whl

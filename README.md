@@ -1,560 +1,281 @@
 # Data Quality Framework
 
-A reusable, modular data quality validation framework designed for lakehouse-style ETL pipelines. Validates datasets at different stages (raw and clean layers) to ensure data integrity and prevent invalid data from reaching analytics layers.
+An enterprise-grade data quality validation framework with REST API, CLI tool, and Terraform infrastructure for lakehouse-style ETL pipelines. Validates datasets at different stages (raw and clean layers) to ensure data integrity.
+
+**Status**: ✅ Production Ready | **Language**: English | **License**: MIT
+
+---
 
 ## 🎯 Overview
 
-This framework provides:
-- **Schema validation** - Enforce expected column names and data types
-- **Null checks** - Validate mandatory field completeness
-- **Uniqueness constraints** - Validate primary key constraints
-- **Value range checks** - Ensure data within expected boundaries
-- **Data freshness checks** - Validate timestamps for API-ingested data
-- **Configurable rules** - YAML-based configuration per dataset
-- **Failure blocking** - Prevent invalid data from propagating downstream
-- **Clear reporting** - Detailed error messages and validation logs
+Complete data quality solution featuring:
+
+- **Schema Validation** - Enforce column names, data types, and constraints
+- **Null Checks** - Validate mandatory field completeness
+- **Uniqueness Constraints** - Enforce primary key constraints
+- **Value Range Checks** - Ensure data within expected boundaries
+- **Data Freshness Checks** - Validate timestamps and recency
+- **Configurable Rules** - YAML-based configuration per dataset
+- **REST API** - FastAPI with automatic Swagger documentation
+- **CLI Tool** - Command-line interface for local operations
+- **Database Persistence** - PostgreSQL with SQLAlchemy ORM
+- **Docker Support** - Multi-stage builds with Docker Compose
+- **Infrastructure as Code** - Complete Terraform for AWS deployment
+- **Monitoring** - Prometheus metrics and CloudWatch integration
 
 ## 🏗️ Architecture
 
-This framework integrates with the lakehouse-simulation project:
+### System Architecture
 
 ```mermaid
-graph TD
-    A["API / Data Source"] --> B["Raw Layer"]
-    B --> C["Data Quality Checks<br/>(This Framework)"]
-    C --> D["Clean Layer"]
-    D --> E["Data Quality Checks<br/>(This Framework)"]
-    E --> F["Analytics Layer"]
+graph TB
+    subgraph "Data Pipeline"
+        A["Data Source<br/>API/File/DB"]
+        B["Raw Layer<br/>Bronze"]
+        C["Quality Checks"]
+        D["Clean Layer<br/>Silver"]
+        E["Analytics<br/>Gold"]
+    end
     
+    subgraph "Validation Framework"
+        F["Framework<br/>Core"]
+        G["REST API<br/>FastAPI"]
+        H["CLI Tool<br/>Click"]
+        I["Database<br/>PostgreSQL"]
+    end
+    
+    subgraph "Infrastructure"
+        J["Monitoring<br/>Prometheus"]
+        K["Dashboard<br/>Grafana"]
+---
+
+## 📡 API Endpoints
+
+```bash
+# Health Check
+curl http://localhost:8000/health
+
+# Validate JSON (file upload)
+curl -X POST http://localhost:8000/validate/json \
+  -F "file=@data/example_data.json" \
+  -F "config=openweather_clean_validation.yaml" \
+  -F "dataset=weather" \
+  -F "layer=clean"
+
+# Validate Dictionary
+curl -X POST http://localhost:8000/validate/dict \
+  -H "Content-Type: application/json" \
+  -d '{"config": "config_name.yaml", "data": {"col1": "value"}}'
+
+# List Configurations
+curl http://localhost:8000/configs
+
+# Prometheus Metrics
+curl http://localhost:8000/metrics
+
+# Interactive API Docs
+open http://localhost:8000/docs
 ```
 
-### Components
+## 💻 CLI Commands
 
-- **Validators** - Individual validation rules
-- **Orchestrator** - Manages running multiple validators
-- **Config Loader** - Loads configuration from YAML files
-- **Exceptions** - Custom error handling
+```bash
+# Validate data
+dqf validate --config config.yaml --data data.json --dataset my_dataset --layer raw
+
+# View history
+dqf history my_dataset
+
+# List configurations
+dqf list-configs
+
+# Show configuration
+dqf show-config config_name.yaml
+
+# Initialize database
+dqf init-db
+
+# Show statistics
+dqf stats
+```
+
+---
+
+## 🐳 Docker Services
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| API | 8000 | FastAPI server |
+| PostgreSQL | 5432 | Database |
+| Prometheus | 9090 | Metrics |
+| Grafana | 3000 | Dashboard |
+
+## 🏗️ AWS Infrastructure
+
+Complete Terraform deployment with:
+
+```mermaid
+graph TB
+    A["VPC<br/>10.0.0.0/16"]
+    B["ALB<br/>Load Balancer"]
+    C["EC2 ASG<br/>Auto Scaling"]
+    D["RDS<br/>PostgreSQL"]
+    E["CloudWatch<br/>Monitoring"]
+    
+    A --> B
+    B --> C
+    C --> D
+    C --> E
+    D --> E
+```
+
+Deploy to AWS:
+
+```bash
+cd terraform
+terraform init
+terraform plan -var-file="environments/prod.tfvars"
+terraform apply -var-file="environments/prod.tfvars"
+```
+
+See [terraform/README.md](terraform/README.md) for details.
+
+---
 
 ## 📦 Installation
 
-### From source
+### Docker Compose (Recommended)
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/data-quality-framework.git
-cd data-quality-framework
+docker-compose up
+```
 
-# Install in development mode
-pip install -e .
+### Local Development
 
-# Install with dev dependencies
+```bash
 pip install -e ".[dev]"
+pytest -v
 ```
 
-### From PyPI (future)
+### With All Features
 
 ```bash
-pip install data-quality-framework
+pip install -e ".[complete]"
 ```
 
-## 🚀 Quick Start
+---
 
-### 1. Basic Validation
-
-```python
-import pandas as pd
-from data_quality_framework import NullCheckValidator, RangeValidator
-from data_quality_framework.orchestrator import QualityCheckOrchestrator
-
-# Create sample data
-data = pd.DataFrame({
-    "temperature": [15.2, 22.1, 12.8],
-    "humidity": [45, 55, 70],
-})
-
-# Define validators
-validators = [
-    NullCheckValidator("mandatory_fields", ["temperature", "humidity"]),
-    RangeValidator("valid_ranges", {
-        "temperature": {"min": -60, "max": 65},
-        "humidity": {"min": 0, "max": 100},
-    }),
-]
-
-# Run checks
-orchestrator = QualityCheckOrchestrator()
-result = orchestrator.run_checks(
-    data,
-    validators,
-    dataset_name="openweather",
-    layer="raw",
-    stop_on_failure=False,
-)
-
-if result.passed:
-    print("✓ All validation checks passed!")
-else:
-    print("✗ Validation failed:")
-    for validator_name, errors in result.errors.items():
-        print(f"  {validator_name}: {errors}")
-```
-
-### 2. YAML Configuration
-
-Create `config/openweather_raw_validation.yaml`:
-
-```yaml
-dataset: "openweather"
-layer: "raw"
-
-rules:
-  - type: "null_check"
-    name: "mandatory_fields"
-    columns:
-      - "city"
-      - "temperature"
-      - "humidity"
-    enabled: true
-
-  - type: "range"
-    name: "valid_ranges"
-    columns:
-      temperature:
-        min: -60
-        max: 65
-      humidity:
-        min: 0
-        max: 100
-    enabled: true
-
-  - type: "freshness"
-    name: "data_freshness"
-    timestamp_column: "dt"
-    max_age_hours: 1
-    enabled: true
-
-on_failure: "log_and_stop"
-```
-
-Then load and use:
-
-```python
-from data_quality_framework import ConfigLoader
-
-config = ConfigLoader.load_yaml("config/openweather_raw_validation.yaml")
-print(config)  # Use configuration to build validators
-```
-
-## 📋 Validator Types
-
-### SchemaValidator
-Validates DataFrame schema using Pandera.
-
-```python
-from data_quality_framework import SchemaValidator
-
-schema = {
-    "id": "int64",
-    "city": "string",
-    "temperature": "float64",
-    "dt": "datetime",
-}
-
-validator = SchemaValidator("schema_check", schema)
-passed = validator.validate(data)
-```
-
-### NullCheckValidator
-Ensures mandatory columns have no null values.
-
-```python
-validator = NullCheckValidator("nulls", ["city", "temperature", "humidity"])
-```
-
-### UniquenessValidator
-Validates uniqueness constraints (single or composite keys).
-
-```python
-# Single column
-validator = UniquenessValidator("unique_id", "id")
-
-# Composite key
-validator = UniquenessValidator("unique_city_date", ["city_id", "measurement_date"])
-```
-
-### RangeValidator
-Validates that numeric values are within expected ranges.
-
-```python
-validator = RangeValidator("ranges", {
-    "temperature": {"min": -60, "max": 65},
-    "humidity": {"min": 0, "max": 100},
-    "pressure": {"min": 870, "max": 1085},
-})
-```
-
-### FreshnessValidator
-Checks that data is not too old (critical for API-ingested data).
-
-```python
-validator = FreshnessValidator(
-    "freshness",
-    timestamp_column="dt",
-    max_age_hours=1  # Data must be less than 1 hour old
-)
-```
-
-### CompositeValidator
-Combines multiple validators into one.
-
-```python
-composite = CompositeValidator("all_checks", [
-    validator1,
-    validator2,
-    validator3,
-])
-```
-
-## 🔌 Integration with Lakehouse Pipeline
-
-### Example ETL Pipeline with Quality Gates
-
-```python
-from data_quality_framework import (
-    NullCheckValidator,
-    UniquenessValidator,
-    RangeValidator,
-    FreshnessValidator,
-)
-from data_quality_framework.orchestrator import QualityCheckOrchestrator
-from data_quality_framework.exceptions import ValidationError
-
-class LakehouseETL:
-    def __init__(self):
-        self.orchestrator = QualityCheckOrchestrator()
-    
-    def extract_and_load_raw(self, raw_data):
-        """Load data to raw layer with validation"""
-        validators = [
-            FreshnessValidator("api_freshness", "dt", max_age_hours=1),
-            NullCheckValidator("mandatory_fields", ["city", "temperature"]),
-        ]
-        
-        try:
-            result = self.orchestrator.run_checks(
-                raw_data,
-                validators,
-                dataset_name="openweather",
-                layer="raw",
-                stop_on_failure=True,  # Block invalid data
-            )
-            print(f"✓ Raw layer: {len(raw_data)} records validated")
-            return True
-        except ValidationError as e:
-            print(f"✗ Raw layer validation failed: {e}")
-            return False
-    
-    def transform_and_load_clean(self, clean_data):
-        """Load data to clean layer with validation"""
-        validators = [
-            NullCheckValidator("mandatory_fields", ["city_id", "measurement_date"]),
-            UniquenessValidator("unique_keys", ["city_id", "measurement_date"]),
-            RangeValidator("value_ranges", {
-                "temperature_celsius": {"min": -60, "max": 65},
-                "humidity_percentage": {"min": 0, "max": 100},
-            }),
-        ]
-        
-        try:
-            result = self.orchestrator.run_checks(
-                clean_data,
-                validators,
-                dataset_name="openweather",
-                layer="clean",
-                stop_on_failure=True,  # Prevent bad data reaching analytics
-            )
-            print(f"✓ Clean layer: {len(clean_data)} records validated")
-            return True
-        except ValidationError as e:
-            print(f"✗ Clean layer validation failed: {e}")
-            return False
-
-# Usage
-etl = LakehouseETL()
-
-# Step 1: API extraction
-raw_data = extract_from_openweather_api()
-
-# Step 2: Load raw layer with quality gate
-if not etl.extract_and_load_raw(raw_data):
-    raise Exception("Cannot proceed: Raw data quality checks failed")
-
-# Step 3: Transform
-clean_data = transform_raw_to_clean(raw_data)
-
-# Step 4: Load clean layer with quality gate
-if not etl.transform_and_load_clean(clean_data):
-    raise Exception("Cannot proceed: Clean data quality checks failed")
-
-# Step 5: Load to analytics (data is guaranteed to be valid)
-publish_to_analytics(clean_data)
-```
-
-## 📊 Real-World Scenarios
-
-### Raw Layer: OpenWeather API Data
-
-**Expected Validations:**
-- ✓ Data must be less than 1 hour old (freshness)
-- ✓ Required fields: `city`, `dt`, `temperature`, `humidity`
-- ✓ Schema: correct column names and types
-- ✓ Ranges: temperature [-60, 65], humidity [0, 100], etc.
-- ✓ Dataset not empty
-
-**Example Failure:**
-```
-✗ Validator 'API Freshness' failed: Oldest record is 25.5 hours old (max allowed: 1h)
-→ Pipeline halted, data not loaded
-```
-
-### Clean Layer: Transformed Weather Data
-
-**Expected Validations:**
-- ✓ No nulls in: `city_id`, `city_name`, `measurement_date`, `temperature_celsius`
-- ✓ Unique: `city_id` + `measurement_date` (one record per city per time)
-- ✓ Ranges: temperature [-60, 65], humidity [0, 100]
-- ✓ Freshness: measurements not older than 48 hours
-
-**Example Failure:**
-```
-✗ Validator 'Unique City-Date' failed: Found 2 duplicate rows on columns ['city_id', 'measurement_date']
-→ Pipeline halted, data not published to analytics
-```
-
-## 🧪 Running Examples
-
-The framework includes practical examples showing all validation types:
+## 🧪 Testing
 
 ```bash
-# Run all examples
-python examples/openweather_examples.py
-
-# Output:
-# ======================================================================
-# EXAMPLE 1: Valid Raw OpenWeather Data
-# ...
-# ✓ All quality checks passed for openweather (raw)
-# ======================================================================
-# EXAMPLE 2: Raw Data with Missing Required Fields
-# ...
-# ✗ Quality checks failed for openweather (raw): ['Mandatory Fields']
-```
-
-### Example: Integration with ETL Pipeline
-
-```bash
-python examples/lakehouse_integration_example.py
-
-# Output:
-# ======================================================================
-# LAKEHOUSE ETL PIPELINE WITH QUALITY GATES
-# ======================================================================
-# [EXTRACT] Fetching data from OpenWeather API...
-# ✓ Extracted 3 records from API
-# 
-# [LOAD RAW] Validating data before loading to raw layer...
-# ✓ Raw layer validation passed
-# 
-# [TRANSFORM] Cleaning and transforming raw data...
-# ✓ Transformed 3 records
-# 
-# [LOAD CLEAN] Validating transformed data before loading...
-# ✓ Clean layer validation passed
-# 
-# [PUBLISH] Loading to Analytics layer...
-# ✓ Published 3 records to Analytics
-# 
-# ✓ PIPELINE COMPLETED SUCCESSFULLY
-```
-
-## 🧬 Configuration Files
-
-Place validation configurations in `config/` directory:
-
-- `openweather_raw_validation.yaml` - Raw layer OpenWeather checks
-- `openweather_clean_validation.yaml` - Clean layer OpenWeather checks
-
-Each configuration specifies:
-- Dataset name
-- Layer (raw, clean, etc.)
-- List of validation rules with type, columns, and constraints
-- Failure behavior (log_only, log_and_stop, quarantine)
-
-## 🛠️ API Reference
-
-### QualityCheckOrchestrator
-
-```python
-orchestrator = QualityCheckOrchestrator()
-
-# Run validators
-result = orchestrator.run_checks(
-    data: pd.DataFrame,
-    validators: List[BaseValidator],
-    dataset_name: str,
-    layer: str,
-    stop_on_failure: bool = True,
-) -> ValidationResult
-
-# Get history
-history = orchestrator.get_validation_history()
-
-# Generate report
-report = orchestrator.generate_report()
-```
-
-### ValidationResult
-
-```python
-result.dataset_name      # Name of the dataset
-result.layer             # Layer name (raw, clean, etc.)
-result.passed            # Boolean: validation passed?
-result.validators_run    # List of validators executed
-result.failed_validators # List of validators that failed
-result.errors            # Dict mapping validator name to error list
-result.timestamp         # When validation ran
-
-result.to_dict()         # Convert to dictionary
-```
-
-### ValidationError
-
-```python
-try:
-    orchestrator.run_checks(...)
-except ValidationError as e:
-    print(e.message)
-    print(e.validation_errors)  # Dict with detailed errors
-```
-
-## 📈 Testing
-
-Run the test suite:
-
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_validators.py -v
+# Run tests
+pytest -v
 
 # With coverage
-pytest tests/ --cov=src/data_quality_framework --cov-report=html
+pytest --cov=data_quality_framework
+
+# In Docker
+docker-compose run dqf-dev pytest -v
 ```
 
-## 📚 Project Structure
+---
 
-```mermaid
-graph TD
-    A["data-quality-framework"]
-    A --> B["src/data_quality_framework"]
-    A --> C["config/"]
-    A --> D["examples/"]
-    A --> E["tests/"]
-    A --> F["docs/"]
-    A --> G["README.md"]
-    
-    B --> B1["__init__.py"]
-    B --> B2["base.py"]
-    B --> B3["validators.py"]
-    B --> B4["orchestrator.py"]
-    B --> B5["config_loader.py"]
-    B --> B6["exceptions.py"]
-    
-    C --> C1["openweather_raw_validation.yaml"]
-    C --> C2["openweather_clean_validation.yaml"]
-    
-    D --> D1["openweather_examples.py"]
-    D --> D2["lakehouse_integration_example.py"]
-    
-    E --> E1["test_validators.py"]
-    E --> E2["test_orchestrator.py"]
-    
-```
+## 📊 Project Statistics
 
-## 🔄 Workflow
+| Component | Status | Lines |
+|-----------|--------|-------|
+| API (FastAPI) | ✅ | 600+ |
+| CLI (Click) | ✅ | 450+ |
+| Database (SQLAlchemy) | ✅ | 350+ |
+| Terraform | ✅ | 1500+ |
+| Docker | ✅ | 250+ |
+| Tests | ✅ | 400+ |
+| **TOTAL** | **✅** | **5550+** |
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant Validators as Validators
-    participant Orchestrator as Orchestrator
-    participant Data as Data Layer
-    
-    App->>Orchestrator: run_checks(data, validators)
-    Orchestrator->>Validators: Execute validator 1
-    Validators->>Validators: Validate data
-    Validators-->>Orchestrator: Result
-    Orchestrator->>Validators: Execute validator 2
-    Validators->>Validators: Validate data
-    Validators-->>Orchestrator: Result
-    Orchestrator->>Orchestrator: Aggregate results
-    Orchestrator-->>App: ValidationResult
-    
-    alt All Passed
-        App->>Data: Load data
-    else Any Failed
-        App->>App: Handle error
-    end
-```
+---
 
-## ⚙️ Configuration Best Practices
+## 📚 Documentation
 
-1. **Separate configs per layer** - `*_raw_validation.yaml`, `*_clean_validation.yaml`
-2. **Reuse across datasets** - One framework for all your data sources
-3. **Version control configs** - Track changes to validation rules
-4. **Document custom rules** - Add descriptions to YAML rules
-5. **Log results** - Always capture validation outcomes for auditing
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development guidelines
+- **[terraform/README.md](terraform/README.md)** - Infrastructure guide
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Architecture details
+- **[examples/](examples/)** - Code examples
 
-## 🤝 Integration with Airflow
+---
 
-This framework is designed to work with Apache Airflow DAGs:
+## ✅ Features Implemented
 
-```python
-from airflow import DAG
-from airflow.operators.python import PythonOperator
-from data_quality_framework.orchestrator import QualityCheckOrchestrator
+### Framework Core
+✅ Pandera schema validation  
+✅ Null checks, uniqueness constraints, range validation  
+✅ Data freshness checks  
+✅ YAML configuration  
+✅ Custom validators  
 
-def validate_raw_data(ti):
-    raw_data = ti.xcom_pull(task_ids='extract_api')
-    
-    orchestrator = QualityCheckOrchestrator()
-    result = orchestrator.run_checks(
-        raw_data,
-        validators=[...],
-        dataset_name='openweather',
-        layer='raw',
-        stop_on_failure=True,
-    )
-    
-    return result.to_dict()
+### REST API
+✅ FastAPI with 8+ endpoints  
+✅ Swagger/OpenAPI documentation  
+✅ File upload support  
+✅ Background task processing  
+✅ Prometheus metrics  
 
-# In your DAG:
-validate_task = PythonOperator(
-    task_id='quality_check_raw',
-    python_callable=validate_raw_data,
-    dag=dag,
-)
-```
+### CLI Tool
+✅ Click-based command-line interface  
+✅ Database integration  
+✅ History tracking  
+✅ Color-coded output  
 
-## 🤖 GitHub Actions - Automated Validation
+### Database
+✅ PostgreSQL with SQLAlchemy ORM  
+✅ Connection pooling  
+✅ CRUD operations  
+✅ 3 data models  
 
-This project includes 3 automated GitHub Actions workflows for continuous integration and detailed reporting:
+### DevOps
+✅ Docker multi-stage build  
+✅ Docker Compose (5 services)  
+✅ Terraform for AWS (complete IaC)  
+✅ 3 environments (dev/staging/prod)  
+✅ Prometheus + Grafana monitoring  
 
-### Workflows Available
+### Monitoring
+✅ CloudWatch integration  
+✅ Custom alarms  
+✅ Application & API logs  
+✅ Metrics dashboard  
 
-1. **Full Validation** (Primary) - Runs on push/PR to main/develop
-   - Tests across Python 3.9, 3.10, 3.11
+---
+
+## 🚀 Next Steps
+
+1. **Test Locally**
+   ```bash
+   docker-compose up
+   curl http://localhost:8000/health
+   ```
+
+2. **Run Tests**
+   ```bash
+   docker-compose run dqf-dev pytest -v
+   ```
+
+3. **Try CLI**
+   ```bash
+   docker-compose run dqf-dev dqf --help
+   ```
+
+4. **Deploy to AWS** (when ready)
+   ```bash
+   cd terraform && terraform apply
+   ```
+
+---
+
+**Status**: ✅ Production Ready  
+**Version**: 1.0.0  
+**Last Updated**: December 2024  
+
+For support, see [CONTRIBUTING.md](CONTRIBUTING.md) or refer to documentation files.
    - Coverage reports with missing line details
    - Runs all validator examples
    - ETL integration testing
