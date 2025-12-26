@@ -151,7 +151,7 @@ jobs:
       # 12. Upload de artefactos
       - name: 📤 Upload Artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: validation-results-${{ matrix.python-version }}
           path: |
@@ -168,7 +168,7 @@ jobs:
       # 13. Generación de comentario en PR
       - name: 💬 Comment Results on PR
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v7.0.1
         with:
           script: |
             const fs = require('fs');

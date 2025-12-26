@@ -94,7 +94,7 @@ jobs:
 
       - name: 📤 Upload all reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: detailed-analytics-reports
           path: |
@@ -108,7 +108,7 @@ jobs:
 
       - name: 📋 Publish test results
         if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@v2.18.0
         with:
           files: test-report.xml
           check_name: Test Results
