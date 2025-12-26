@@ -1,0 +1,91 @@
+# Data Quality Configuration - OpenWeather Raw Layer
+# This configuration validates data immediately after API ingestion
+
+dataset: "openweather"
+layer: "raw"
+description: "OpenWeather API raw data validation"
+
+rules:
+  - type: "freshness"
+    name: "data_freshness"
+    timestamp_column: "dt"
+    max_age_hours: 1
+    enabled: true
+    description: "Ensure data is not older than 1 hour"
+
+  - type: "null_check"
+    name: "mandatory_fields"
+    columns:
+      - "city"
+      - "dt"
+      - "temperature"
+      - "humidity"
+      - "weather_main"
+    enabled: true
+    description: "Check that critical fields are not null"
+
+  - type: "schema"
+    name: "schema_validation"
+    schema:
+      id:
+        type: "int64"
+      city:
+        type: "string"
+      dt:
+        type: "datetime"
+      temperature:
+        type: "float64"
+      feels_like:
+        type: "float64"
+      temp_min:
+        type: "float64"
+      temp_max:
+        type: "float64"
+      pressure:
+        type: "int64"
+      humidity:
+        type: "int64"
+      weather_main:
+        type: "string"
+      weather_description:
+        type: "string"
+      wind_speed:
+        type: "float64"
+      wind_deg:
+        type: "float64"
+      cloudiness:
+        type: "int64"
+      rain_1h:
+        type: "float64"
+        nullable: true
+    enabled: true
+    description: "Validate column names and data types"
+
+  - type: "range"
+    name: "valid_ranges"
+    columns:
+      temperature:
+        min: -60
+        max: 65
+      humidity:
+        min: 0
+        max: 100
+      pressure:
+        min: 870
+        max: 1085
+      wind_speed:
+        min: 0
+        max: 50
+      cloudiness:
+        min: 0
+        max: 100
+    enabled: true
+    description: "Ensure numeric values are within reasonable physical ranges"
+
+  - type: "non_empty"
+    name: "data_not_empty"
+    enabled: true
+    description: "Ensure the dataset contains records"
+
+# Failure behavior
+on_failure: "log_and_stop"  # Options: log_only, log_and_stop, quarantine

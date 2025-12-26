@@ -1,0 +1,104 @@
+# Data Quality Configuration - OpenWeather Clean Layer
+# This configuration validates data after transformation and cleaning
+
+dataset: "openweather"
+layer: "clean"
+description: "OpenWeather data after cleaning and transformation"
+
+rules:
+  - type: "schema"
+    name: "clean_schema_validation"
+    schema:
+      city_id:
+        type: "int64"
+      city_name:
+        type: "string"
+      country:
+        type: "string"
+      measurement_date:
+        type: "datetime"
+      temperature_celsius:
+        type: "float64"
+      feels_like_celsius:
+        type: "float64"
+      humidity_percentage:
+        type: "int64"
+      weather_condition:
+        type: "string"
+      wind_speed_ms:
+        type: "float64"
+      cloudiness_percentage:
+        type: "int64"
+      pressure_hpa:
+        type: "int64"
+      precipitation_mm:
+        type: "float64"
+        nullable: true
+      data_quality_score:
+        type: "float64"
+      ingestion_timestamp:
+        type: "datetime"
+    enabled: true
+    description: "Validate transformed schema and types"
+
+  - type: "null_check"
+    name: "clean_mandatory_fields"
+    columns:
+      - "city_id"
+      - "city_name"
+      - "measurement_date"
+      - "temperature_celsius"
+      - "humidity_percentage"
+      - "weather_condition"
+    enabled: true
+    description: "Ensure no nulls in critical clean layer fields"
+
+  - type: "uniqueness"
+    name: "unique_city_date"
+    key_columns:
+      - "city_id"
+      - "measurement_date"
+    enabled: true
+    description: "Ensure one record per city per measurement date"
+
+  - type: "range"
+    name: "clean_value_ranges"
+    columns:
+      temperature_celsius:
+        min: -60
+        max: 65
+      feels_like_celsius:
+        min: -60
+        max: 65
+      humidity_percentage:
+        min: 0
+        max: 100
+      wind_speed_ms:
+        min: 0
+        max: 50
+      cloudiness_percentage:
+        min: 0
+        max: 100
+      pressure_hpa:
+        min: 870
+        max: 1085
+      data_quality_score:
+        min: 0
+        max: 1
+    enabled: true
+    description: "Validate ranges for cleaned numeric fields"
+
+  - type: "freshness"
+    name: "clean_data_freshness"
+    timestamp_column: "measurement_date"
+    max_age_hours: 48
+    enabled: true
+    description: "Ensure measurement dates are within 48 hours"
+
+  - type: "non_empty"
+    name: "clean_data_not_empty"
+    enabled: true
+    description: "Ensure clean dataset has records"
+
+# Failure behavior
+on_failure: "log_and_stop"  # Will block downstream analytics
