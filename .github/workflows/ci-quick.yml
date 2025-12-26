@@ -1,0 +1,42 @@
+name: CI - Quick Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'examples/**'
+      - '.github/workflows/ci-quick.yml'
+      - 'pyproject.toml'
+      - 'setup.py'
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quick-check:
+    name: Quick CI Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short
+          
+      - name: Check coverage threshold
+        run: |
+          pytest tests/ \
+            --cov=src/data_quality_framework \
+            --cov-fail-under=70

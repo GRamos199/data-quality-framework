@@ -1,0 +1,123 @@
+name: Detailed Analytics & Reporting
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    # Ejecutar cada 6 horas
+    - cron: '0 */6 * * *'
+
+jobs:
+  analytics:
+    name: Generate Detailed Analytics
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install coverage[toml] json5
+
+      - name: 🧪 Run tests with detailed metrics
+        run: |
+          pytest tests/ \
+            -v \
+            --tb=long \
+            --capture=no \
+            --durations=0 \
+            --cov=src/data_quality_framework \
+            --cov-report=html \
+            --cov-report=json \
+            --cov-report=term-missing:skip-covered \
+            --junit-xml=test-report.xml \
+            --html=test-report.html \
+            --self-contained-html
+
+      - name: 📊 Generate coverage badge
+        run: |
+          python -c "
+          import json
+          with open('.coverage.json', 'r') as f:
+              data = json.load(f)
+              total = data['totals']['percent_covered']
+          color = 'green' if total >= 80 else 'yellow' if total >= 70 else 'red'
+          badge = f'![Coverage]({total:.0f}% - {color})'
+          print(f'Coverage: {total:.2f}%')
+          with open('COVERAGE.md', 'w') as f:
+              f.write(f'# Coverage Report\n\n{badge}\n\nDetailed report: [View Coverage Report](https://github.com/${{github.repository}}/actions/runs/${{github.run_id}})\n')
+          " || true
+
+      - name: 📈 Generate detailed test report
+        if: always()
+        run: |
+          cat > test-summary.md << 'EOF'
+          # Test Execution Summary
+          
+          ## Execution Details
+          - **Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          - **Branch**: ${{ github.ref }}
+          - **Commit**: ${{ github.sha }}
+          - **Actor**: ${{ github.actor }}
+          
+          ## Test Results
+          EOF
+          
+          if [ -f test-report.xml ]; then
+            echo "### XML Report Generated" >> test-summary.md
+            python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('test-report.xml')
+          root = tree.getroot()
+          tests = int(root.get('tests', 0))
+          failures = int(root.get('failures', 0))
+          errors = int(root.get('errors', 0))
+          skipped = int(root.get('skipped', 0))
+          
+          print(f'- Total Tests: {tests}')
+          print(f'- Passed: {tests - failures - errors - skipped}')
+          print(f'- Failed: {failures}')
+          print(f'- Errors: {errors}')
+          print(f'- Skipped: {skipped}')
+            " >> test-summary.md
+          fi
+          
+          cat test-summary.md
+
+      - name: 📤 Upload all reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: detailed-analytics-reports
+          path: |
+            htmlcov/
+            test-report.html
+            test-report.xml
+            .coverage.json
+            COVERAGE.md
+            test-summary.md
+          retention-days: 60
+
+      - name: 📋 Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-report.xml
+          check_name: Test Results
+
+      - name: 🔗 Display links to reports
+        if: always()
+        run: |
+          echo "## 📊 Reports Generated"
+          echo ""
+          echo "- **Test Report**: Available in Artifacts"
+          echo "- **Coverage Report**: Available in Artifacts"
+          echo "- **Artifacts**: Check Actions tab → Artifacts section"

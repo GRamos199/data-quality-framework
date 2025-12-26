@@ -547,6 +547,48 @@ validate_task = PythonOperator(
 )
 ```
 
+## 🤖 GitHub Actions - Automated Validation
+
+This project includes 3 automated GitHub Actions workflows for continuous integration and detailed reporting:
+
+### Workflows Available
+
+1. **Full Validation** (Primary) - Runs on push/PR to main/develop
+   - Tests across Python 3.9, 3.10, 3.11
+   - Coverage reports with missing line details
+   - Runs all validator examples
+   - ETL integration testing
+   - Detailed consolidated reports
+   - Auto-comments on PRs
+
+2. **Quick CI** - Fast feedback on code changes
+   - Python 3.11 only
+   - Quick test + coverage threshold check
+   - Feedback in 2-5 minutes
+
+3. **Analytics** - Scheduled detailed analytics
+   - Runs every 6 hours on main branch
+   - Coverage trends and metrics
+   - HTML test and coverage reports
+
+### Local Validation (Before Push)
+
+Run the validation script locally to catch issues before pushing to GitHub:
+
+```bash
+./validate_locally.sh
+```
+
+This generates detailed logs and HTML coverage reports locally.
+
+### Documentation
+
+- **Quick Reference**: [GITHUB_ACTIONS_QUICK_REF.md](GITHUB_ACTIONS_QUICK_REF.md)
+- **Setup Guide**: [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md)
+- **Full Documentation**: [docs/GITHUB_ACTIONS.md](docs/GITHUB_ACTIONS.md)
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Validation Error: "Column not found"

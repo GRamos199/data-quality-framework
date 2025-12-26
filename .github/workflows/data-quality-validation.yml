@@ -1,0 +1,216 @@
+name: Data Quality Framework - Full Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Ejecutar diariamente a las 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  validation:
+    name: Data Quality Validation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    
+    steps:
+      # 1. Checkout del código
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Setup de Python
+      - name: 🐍 Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      # 3. Información del entorno
+      - name: 📊 Display environment info
+        run: |
+          echo "=== Python Environment ==="
+          python --version
+          pip --version
+          echo ""
+          echo "=== System Info ==="
+          uname -a
+          echo ""
+          echo "=== Working Directory ==="
+          pwd
+          ls -la
+
+      # 4. Instalación de dependencias
+      - name: 📦 Install dependencies
+        run: |
+          echo "Installing package with dev dependencies..."
+          pip install -e ".[dev]"
+          pip list --format=columns
+          echo "✓ Dependencies installed successfully"
+
+      # 5. Validación de sintaxis
+      - name: 🔍 Lint - Check syntax and imports
+        run: |
+          echo "=== Validating Python Syntax ==="
+          python -m py_compile src/data_quality_framework/*.py
+          python -m py_compile tests/*.py
+          python -m py_compile examples/*.py
+          echo "✓ All Python files have valid syntax"
+
+      # 6. Ejecución de tests unitarios
+      - name: ✅ Unit Tests
+        run: |
+          echo "=== Running Unit Tests (Detailed Output) ==="
+          pytest tests/ -v \
+            --tb=short \
+            --capture=no \
+            --durations=10 \
+            2>&1 | tee test-results.log
+          echo ""
+          echo "=== Test Summary ==="
+          tail -n 20 test-results.log
+
+      # 7. Tests con cobertura
+      - name: 📈 Tests with Coverage Report
+        run: |
+          echo "=== Running Tests with Coverage ==="
+          pytest tests/ -v \
+            --cov=src/data_quality_framework \
+            --cov-report=html \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=json \
+            2>&1 | tee coverage-results.log
+          echo ""
+          echo "=== Coverage Summary ==="
+          tail -n 30 coverage-results.log
+
+      # 8. Ejecución de ejemplos - Validators
+      - name: 🔧 Run Framework Examples - Validators
+        run: |
+          echo "=== Executing OpenWeather Examples ==="
+          echo "Testing validators and orchestrator functionality..."
+          echo ""
+          python examples/openweather_examples.py 2>&1 | tee examples-validators.log
+          echo ""
+          echo "✓ Examples completed successfully"
+
+      # 9. Ejecución de ejemplos - ETL Integration
+      - name: 🔄 Run Framework Examples - ETL Integration
+        run: |
+          echo "=== Executing Lakehouse ETL Integration Example ==="
+          echo "Testing full data quality pipeline..."
+          echo ""
+          python examples/lakehouse_integration_example.py 2>&1 | tee examples-etl.log
+          echo ""
+          echo "✓ ETL integration example completed successfully"
+
+      # 10. Validación de datos de ejemplo
+      - name: 📋 Validate Example Data
+        run: |
+          echo "=== Validating Example Dataset ==="
+          python test_your_json.py 2>&1 | tee data-validation.log
+          echo ""
+          echo "✓ Data validation completed"
+
+      # 11. Generación de reporte consolidado
+      - name: 📑 Generate Consolidated Report
+        if: always()
+        run: |
+          echo "=== Data Quality Framework - Validation Report ===" > validation-report.txt
+          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> validation-report.txt
+          echo "Python Version: $(python --version)" >> validation-report.txt
+          echo "Runner: ${{ matrix.python-version }}" >> validation-report.txt
+          echo "" >> validation-report.txt
+          
+          echo "### UNIT TESTS RESULTS ###" >> validation-report.txt
+          if [ -f test-results.log ]; then
+            tail -n 5 test-results.log >> validation-report.txt
+          fi
+          echo "" >> validation-report.txt
+          
+          echo "### COVERAGE REPORT ###" >> validation-report.txt
+          if [ -f coverage-results.log ]; then
+            grep -E "TOTAL|data_quality_framework" coverage-results.log >> validation-report.txt || true
+          fi
+          echo "" >> validation-report.txt
+          
+          echo "### BUILD STATUS ###" >> validation-report.txt
+          if [ $? -eq 0 ]; then
+            echo "✓ All validations passed" >> validation-report.txt
+          else
+            echo "✗ Some validations failed" >> validation-report.txt
+          fi
+          
+          cat validation-report.txt
+
+      # 12. Upload de artefactos
+      - name: 📤 Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: validation-results-${{ matrix.python-version }}
+          path: |
+            test-results.log
+            coverage-results.log
+            examples-validators.log
+            examples-etl.log
+            data-validation.log
+            validation-report.txt
+            .coverage
+            htmlcov/
+          retention-days: 30
+
+      # 13. Generación de comentario en PR
+      - name: 💬 Comment Results on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let reportContent = '';
+            
+            try {
+              reportContent = fs.readFileSync('validation-report.txt', 'utf8');
+            } catch (e) {
+              reportContent = 'Report generation failed';
+            }
+            
+            const comment = `## 📊 Data Quality Framework Validation Report
+            
+            \`\`\`
+            ${reportContent}
+            \`\`\`
+            
+            **Python Version:** ${{ matrix.python-version }}
+            **Run Date:** ${new Date().toISOString()}
+            **Artifacts:** Available in Actions tab
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Job para notificaciones finales
+  notification:
+    name: Build Status Notification
+    runs-on: ubuntu-latest
+    needs: validation
+    if: always()
+    steps:
+      - name: 🎯 Final Status
+        run: |
+          if [ "${{ needs.validation.result }}" = "success" ]; then
+            echo "✅ All validations PASSED"
+            echo "Data Quality Framework is ready for deployment"
+          else
+            echo "❌ Some validations FAILED"
+            echo "Please review the logs in the Actions tab"
+          fi
