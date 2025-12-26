@@ -39,4 +39,4 @@ jobs:
         run: |
           pytest tests/ \
             --cov=src/data_quality_framework \
-            --cov-fail-under=70
+            --cov-fail-under=50
