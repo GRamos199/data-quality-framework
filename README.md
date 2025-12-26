@@ -26,8 +26,6 @@ graph TD
     D --> E["Data Quality Checks<br/>(This Framework)"]
     E --> F["Analytics Layer"]
     
-    style C fill:#4CAF50,color:#fff
-    style E fill:#4CAF50,color:#fff
 ```
 
 ### Components
@@ -482,10 +480,6 @@ graph TD
     E --> E1["test_validators.py"]
     E --> E2["test_orchestrator.py"]
     
-    style B fill:#2196F3,color:#fff
-    style C fill:#FF9800,color:#fff
-    style D fill:#9C27B0,color:#fff
-    style E fill:#F44336,color:#fff
 ```
 
 ## 🔄 Workflow
