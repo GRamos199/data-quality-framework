@@ -42,7 +42,7 @@ class SchemaValidator(BaseValidator):
                     f"Invalid schema specification for column {col_name}"
                 )
 
-        return pa.DataFrameSchema(columns)
+        return pa.DataFrameSchema(columns, coerce=True)
 
     def _build_column(self, col_name: str, col_spec: Dict[str, Any]) -> pa.Column:
         """Build a Pandera Column with constraints"""
@@ -73,7 +73,7 @@ class SchemaValidator(BaseValidator):
             "float64": "float64",
             "float32": "float32",
             "str": "object",
-            "string": "object",
+            "string": "string",
             "object": "object",
             "bool": "bool",
             "datetime": "datetime64[ns]",
